@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Price Elasticity Quiz</title>
+    <style>
+      :root{--bg:#0b1020;--card:#121933;--card2:#0e1530;--text:#e8ecf5;--muted:#a8b3cf;--border:#263452;--accent:#7c6bf3;--good:#22c55e;--bad:#ef4444}
+      *{box-sizing:border-box}
+      body{margin:0;font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:var(--text);background:radial-gradient(1200px 800px at 10% -10%, #1b2448 0%, #0b1020 40%), var(--bg)}
+      .wrap{max-width:900px;margin:0 auto;padding:24px 16px}
+      header.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+      h1{margin:0}
+      .pill{font-size:12px;color:var(--muted);border:1px solid var(--border);border-radius:999px;padding:4px 8px}
+      .card{background:linear-gradient(180deg, rgba(20,30,70,.6), rgba(15,22,55,.9));border:1px solid var(--border);border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.25);overflow:hidden}
+      .body{padding:16px}
+      .pair{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+      .item{background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:8px;cursor:pointer;transition:transform .08s ease;color:var(--text);text-align:left}
+      .item:active{transform:scale(.99)}
+      .thumb-wrap{position:relative}
+      .thumb{width:100%;height:180px;object-fit:cover;border-radius:10px;border:1px solid var(--border);background:#0b1020}
+      .name{font-size:18px;font-weight:700}
+      .stage{margin-top:14px;padding:12px;border:1px solid var(--border);border-radius:12px;background:#0f1a38}
+      .opts{display:grid;gap:8px;margin-top:8px}
+      .opt{display:flex;gap:8px;align-items:center;color:var(--text)}
+      .opt span{color:var(--text)}
+      .hidden{display:none}
+      .result{margin-top:10px;font-weight:600}
+      .good{color:var(--good)}
+      .bad{color:var(--bad)}
+      .footer{display:flex;justify-content:flex-end;align-items:center;margin-top:12px}
+      .bar{height:8px;background:#182248;border:1px solid var(--border);border-radius:999px;overflow:hidden;min-width:160px}
+      .bar>i{display:block;height:100%;background:linear-gradient(90deg,#7c6bf3,#22c55e);width:0%}
+      .btn{appearance:none;border:1px solid var(--border);background:#334270;color:var(--text);padding:10px 12px;border-radius:10px;cursor:pointer}
+      .btn.primary{background:var(--accent)}
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="top">
+        <h1>Price Elasticity Quiz</h1>
+        <div class="pill">Q <span id="qnum">1</span>/<span id="qtotal">10</span> • Score <span id="score">0</span></div>
+      </header>
+
+      <div class="card">
+        <div class="body">
+          <div id="pair" class="pair"></div>
+
+          <div id="stage1" class="stage">
+            <div><strong>Step 1:</strong> Tap the product with more price elastic demand.</div>
+            <div id="feedback1" class="result"></div>
+          </div>
+
+          <div id="stage2" class="stage hidden">
+            <div><strong>Step 2:</strong> Choose the key determinant.</div>
+            <div id="opts" class="opts"></div>
+            <div class="result" id="feedback2"></div>
+          </div>
+
+          <div class="footer"><div class="bar"><i id="progress"></i></div></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const ROUNDS = 10;
+      const DETERMINANTS = [
+        'Availability of close substitutes',
+        'Necessity vs luxury',
+        'Share of income spent on the good',
+        'Habit-forming/addictive',
+        'Purpose of use / business vs leisure',
+        'Time to respond (short vs long run)'
+      ];
+
+      // Product bank (sample of many; extendable). Each gets an elasticity rank: higher => more elastic.
+      const PRODUCTS = [
+        {name:'Tap water', img:'https://images.unsplash.com/photo-1528825871115-3581a5387919?fm=jpg&q=80&fit=crop&w=640&h=420', det:'Availability of close substitutes', rank:2},
+        {name:'Bottled water', img:'https://images.unsplash.com/photo-1564859227551-c03cb7a6127b?fm=jpg&q=80&fit=crop&w=640&h=420', det:'Availability of close substitutes', rank:6},
+        {name:'Insulin', img:'https://images.unsplash.com/photo-1580281657527-47f249e8f3b9?fm=jpg&q=80&fit=crop&w=640&h=420', det:'Necessity vs luxury', rank:1},
+        {name:'Energy drink', img:'https://images.unsplash.com/photo-1613478223719-2ab3b6a91e76?fm=jpg&q=80&fit=crop&w=640&h=420', det:'Necessity vs luxury', rank:7},
+        {name:'Home-brew coffee', img:'https://images.unsplash.com/photo-1509042239860-f550ce710b93?fm=jpg&q=80&fit=crop&w=640&h=420', det:'Necessity vs luxury', rank:5},
+        {name:'Starbucks latte', img:'https://images.unsplash.com/photo-1511920170033-f8396924c348?fm=jpg&q=80&fit=crop&w=640&h=420', det:'Necessity vs luxury', rank:7},
+        {name:'Generic cereal', img:'https://images.unsplash.com/photo-1490474418585-ba9bad8fd0ea?fm=jpg&q=80&fit=crop&w=640&h=420', det:'Availability of close substitutes', rank:5},
+        {name:'Branded cereal', img:'https://images.unsplash.com/photo-1598966734798-0c54fe7c0648?fm=jpg&q=80&fit=crop&w=640&h=420', det:'Availability of close substitutes', rank:6},
+        {name:'Life-saving surgery', img:'https://images.unsplash.com/photo-1580281657527-47f249e8f3b9?fm=jpg&q=80&fit=crop&w=640&h=420', det:'Necessity vs luxury', rank:1},
+        {name:'Cinema ticket', img:'https://images.unsplash.com/photo-1517602302552-471fe67acf66?fm=jpg&q=80&fit=crop&w=640&h=420', det:'Necessity vs luxury', rank:7},
+        {name:'Local bus fare', img:'https://images.unsplash.com/photo-1528909514045-2fa4ac7a08ba?fm=jpg&q=80&fit=crop&w=640&h=420', det:'Availability of close substitutes', rank:3},
+        {name:'Luxury coach ticket', img:'https://images.unsplash.com/photo-1511735111819-9a3f7709049c?fm=jpg&q=80&fit=crop&w=640&h=420', det:'Availability of close substitutes', rank:6},
+        {name:'Daily bread', img:'https://images.unsplash.com/photo-1514511547119-786a1e59f434?fm=jpg&q=80&fit=crop&w=640&h=420', det:'Necessity vs luxury', rank:2},
+        {name:'Magazine subscription', img:'https://images.unsplash.com/photo-1457694587812-e8bf29a43845?fm=jpg&q=80&fit=crop&w=640&h=420', det:'Necessity vs luxury', rank:6},
+        {name:'Phone case', img:'https://images.unsplash.com/photo-1510554310709-16fdd64a4f93?fm=jpg&q=80&fit=crop&w=640&h=420', det:'Share of income spent on the good', rank:5},
+        {name:'New smartphone', img:'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?fm=jpg&q=80&fit=crop&w=640&h=420', det:'Share of income spent on the good', rank:7},
+        {name:'Air travel (business)', img:'https://images.unsplash.com/photo-1504196606672-aef5c9cefc92?fm=jpg&q=80&fit=crop&w=640&h=420', det:'Purpose of use / business vs leisure', rank:3},
+        {name:'Air travel (leisure)', img:'https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?fm=jpg&q=80&fit=crop&w=640&h=420', det:'Purpose of use / business vs leisure', rank:6},
+        {name:'Cigarettes', img:'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?fm=jpg&q=80&fit=crop&w=640&h=420', det:'Habit-forming/addictive', rank:1},
+        {name:'Chewing gum', img:'https://images.unsplash.com/photo-1615486364436-3d6b7a3e02aa?fm=jpg&q=80&fit=crop&w=640&h=420', det:'Availability of close substitutes', rank:6},
+        // Additional products to increase the bank (sample additions)
+        {name:'Salt', img:'https://images.unsplash.com/photo-1512323772240-06236a7da9b3?fm=jpg&q=80&fit=crop&w=640&h=420', det:'Necessity vs luxury', rank:2},
+        {name:'Organic chocolate', img:'https://images.unsplash.com/photo-1517093602195-b40af9688b53?fm=jpg&q=80&fit=crop&w=640&h=420', det:'Necessity vs luxury', rank:7},
+        {name:'Gasoline (short run)', img:'https://images.unsplash.com/photo-1542367597-8849eb2f8a43?fm=jpg&q=80&fit=crop&w=640&h=420', det:'Time to respond (short vs long run)', rank:2},
+        {name:'Ride-share trip', img:'https://images.unsplash.com/photo-1517677129300-07b130802f46?fm=jpg&q=80&fit=crop&w=640&h=420', det:'Availability of close substitutes', rank:6},
+        {name:'Textbook (required)', img:'https://images.unsplash.com/photo-1519681393784-d120267933ba?fm=jpg&q=80&fit=crop&w=640&h=420', det:'Necessity vs luxury', rank:2},
+        {name:'Cookbook (gift)', img:'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?fm=jpg&q=80&fit=crop&w=640&h=420', det:'Necessity vs luxury', rank:6},
+        {name:'Prescription glasses', img:'https://images.unsplash.com/photo-1519060825752-cf3f9c7c1d9c?fm=jpg&q=80&fit=crop&w=640&h=420', det:'Necessity vs luxury', rank:3},
+        {name:'Designer sunglasses', img:'https://images.unsplash.com/photo-1511407397940-d57f68e81203?fm=jpg&q=80&fit=crop&w=640&h=420', det:'Necessity vs luxury', rank:7},
+        {name:'Streaming subscription', img:'https://images.unsplash.com/photo-1517602302552-471fe67acf66?fm=jpg&q=80&fit=crop&w=640&h=420', det:'Availability of close substitutes', rank:6},
+        {name:'Basic electricity', img:'https://images.unsplash.com/photo-1509395176047-4a66953fd231?fm=jpg&q=80&fit=crop&w=640&h=420', det:'Necessity vs luxury', rank:1},
+        {name:'Concert ticket', img:'https://images.unsplash.com/photo-1506157786151-b8491531f063?fm=jpg&q=80&fit=crop&w=640&h=420', det:'Necessity vs luxury', rank:7},
+        {name:'Public parking', img:'https://images.unsplash.com/photo-1462396881884-de2c07cb95ed?fm=jpg&q=80&fit=crop&w=640&h=420', det:'Availability of close substitutes', rank:4},
+        {name:'Ride-on scooter rental', img:'https://images.unsplash.com/photo-1534691991245-9aa20eeed1bf?fm=jpg&q=80&fit=crop&w=640&h=420', det:'Availability of close substitutes', rank:6}
+      ];
+
+      // State
+      let round = 0, score = 0; let selectedSide = null; let current = null; const usedPairs = new Set(); const usedProducts = new Set();
+      const els = {qnum:document.getElementById('qnum'), qtotal:document.getElementById('qtotal'), score:document.getElementById('score'), pair:document.getElementById('pair'), stage1:document.getElementById('stage1'), stage2:document.getElementById('stage2'), feedback1:document.getElementById('feedback1'), feedback2:document.getElementById('feedback2'), opts:document.getElementById('opts'), progress:document.getElementById('progress')};
+      els.qtotal.textContent = ROUNDS;
+
+      function randProductIndex(){ return Math.floor(Math.random()*PRODUCTS.length); }
+
+      function nextPair(){
+        // Candidate pool excludes already-used products this attempt
+        const candidates = PRODUCTS.map((_,idx)=>idx).filter(idx=>!usedProducts.has(idx));
+        // Fallback safety: if too few remain (should not happen with our bank), allow all
+        const pool = candidates.length >= 2 ? candidates : PRODUCTS.map((_,idx)=>idx).filter(idx=>!usedProducts.has(idx));
+        let i=-1, j=-1; let guard=0;
+        // Try random sampling first
+        while(guard < 500){
+          const a = pool[Math.floor(Math.random()*pool.length)];
+          const b = pool[Math.floor(Math.random()*pool.length)];
+          if(a===b) { guard++; continue; }
+          if(PRODUCTS[a].rank === PRODUCTS[b].rank) { guard++; continue; }
+          if(usedPairs.has(keyFor(a,b))) { guard++; continue; }
+          i=a; j=b; break;
+        }
+        // Deterministic search fallback
+        if(i===-1){
+          outer: for(const a of pool){
+            for(const b of pool){
+              if(a===b) continue;
+              if(PRODUCTS[a].rank===PRODUCTS[b].rank) continue;
+              if(usedPairs.has(keyFor(a,b))) continue;
+              i=a; j=b; break outer;
+            }
+          }
+        }
+        // If still not found, reset pairs tracking only (products still unique)
+        if(i===-1){ usedPairs.clear(); return nextPair(); }
+        usedPairs.add(keyFor(i,j));
+        usedProducts.add(i); usedProducts.add(j);
+        const A = PRODUCTS[i], B = PRODUCTS[j];
+        const correct = (A.rank > B.rank) ? 'A' : 'B';
+        const det = (correct==='A'?A.det:B.det);
+        current = {A,B,correct,det};
+      }
+
+      function keyFor(i,j){ return i<j ? `${i}-${j}` : `${j}-${i}`; }
+
+      function renderQuestion(){
+        if(!current) nextPair();
+        const q = current; round = Math.max(round,1);
+        els.qnum.textContent = round; els.score.textContent = score;
+        els.feedback1.textContent=''; els.feedback2.textContent=''; els.stage2.classList.add('hidden'); els.opts.innerHTML='';
+        const imgA = `<div class=\"thumb-wrap\"><img class=\"thumb\" loading=\"lazy\" referrerpolicy=\"no-referrer\" src=\"${q.A.img}\" alt=\"${q.A.name}\" onerror=\"this.parentElement.remove();\"></div>`;
+        const imgB = `<div class=\"thumb-wrap\"><img class=\"thumb\" loading=\"lazy\" referrerpolicy=\"no-referrer\" src=\"${q.B.img}\" alt=\"${q.B.name}\" onerror=\"this.parentElement.remove();\"></div>`;
+        els.pair.innerHTML = `
+          <button class=\"item\" data-side=\"A\" aria-label=\"Choose A: ${q.A.name}\">${imgA}<div class=\"name\">A. ${q.A.name}</div></button>
+          <button class=\"item\" data-side=\"B\" aria-label=\"Choose B: ${q.B.name}\">${imgB}<div class=\"name\">B. ${q.B.name}</div></button>
+        `;
+        els.pair.querySelectorAll('.item').forEach(el=>el.addEventListener('click',()=>handleChoose(el.getAttribute('data-side'))));
+        // Determinant options
+        const options = [q.det, ...pickDecoys(q.det, 2)].sort(()=>Math.random()-0.5);
+        options.forEach(t=>{ const row=document.createElement('label'); row.className='opt'; row.innerHTML=`<input type=\"radio\" name=\"det\" value=\"${t}\"> <span>${t}</span>`; els.opts.appendChild(row); });
+        els.progress.style.width = `${((round-1)/ROUNDS)*100}%`;
+      }
+
+      function pickDecoys(correct, n){
+        const pool = DETERMINANTS.filter(d=>d!==correct);
+        for(let i=pool.length-1;i>0;i--){ const k=Math.floor(Math.random()*(i+1)); [pool[i],pool[k]]=[pool[k],pool[i]]; }
+        return pool.slice(0,n);
+      }
+
+      function handleChoose(side){
+        selectedSide = side;
+        const ok = (side === current.correct);
+        els.feedback1.innerHTML = ok ? '<span class=\"good\">Correct.</span>' : '<span class=\"bad\">Not quite.</span>';
+        if(ok) score += 1;
+        els.stage2.classList.remove('hidden');
+      }
+
+      function handleSubmitDet(){
+        const inputs = els.opts.querySelectorAll('input[type=radio]'); let val=null; for(const r of inputs){ if(r.checked){ val=r.value; break; }}
+        if(!val){ els.feedback2.innerHTML = '<span class=\"bad\">Choose a determinant.</span>'; return; }
+        const ok = (val === current.det);
+        els.feedback2.innerHTML = ok ? '<span class=\"good\">Correct.</span>' : '<span class=\"bad\">Not this one.</span>';
+        if(ok) score += 1;
+        setTimeout(()=>{
+          if(round >= ROUNDS){ finish(); return; }
+          round += 1; nextPair(); renderQuestion();
+        }, 800);
+      }
+
+      function finish(){
+        els.pair.innerHTML=''; els.stage1.classList.add('hidden'); els.stage2.classList.add('hidden'); els.progress.style.width='100%';
+        const total = ROUNDS*2; const div=document.createElement('div'); div.className='stage';
+        div.innerHTML = `<h2>Done</h2><p>Your score: <strong>${score} / ${total}</strong></p><div class=\"actions\"><button class=\"btn\" id=\"restart\">Restart</button></div>`;
+        document.querySelector('.body').appendChild(div);
+        document.getElementById('restart').addEventListener('click',()=>{ score=0; round=1; usedPairs.clear(); usedProducts.clear(); current=null; div.remove(); els.stage1.classList.remove('hidden'); nextPair(); renderQuestion(); });
+      }
+
+      document.addEventListener('click', (e)=>{ if(e.target && e.target.id==='submitDet'){ handleSubmitDet(); }});
+      // Mount submit button lazily to avoid clutter
+      const submitBtn = document.createElement('button'); submitBtn.className='btn primary'; submitBtn.id='submitDet'; submitBtn.textContent='Submit determinant';
+      document.getElementById('stage2').appendChild(submitBtn);
+
+      // Init
+      round = 1; nextPair(); renderQuestion();
+    </script>
+  </body>
+</html>
